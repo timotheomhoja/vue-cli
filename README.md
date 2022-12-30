@@ -28,8 +28,8 @@ pipeline {
     environment {
         IMG = "baridibaridi_app:${BUILD_ID}"
         IMG_TAGGED = "baidibaridi_app:latest"
-        TG_HOST = "ssh://ec2-user@13.245.2.166"
-        TG_SSH  = "13.245.2.166"
+        TG_HOST = "ssh://ec2-user@ip"
+        TG_SSH  = "ip"
         TG_USR  = "ec2-user"
         TG_PORT = 9000
     }
