@@ -86,6 +86,69 @@ pipeline {
 }
 
 
+//////////////////////////////////////////////////////////////////////other expample
+// Declarative pipeline
+@Library('docker-deploy') _
+
+pipeline {
+
+  agent any
+
+  environment {
+    DOCKER_IMG     = "bb_iota_verification_api" // The image to push.
+    SSH_HOST       = "0.0.0.0"   // The host to use
+    SSH_USER       = "ec2-user"        // SSH user 
+    CREDENTIALS_ID = "baridibaridi_app"  // ID of the credential
+  }
+
+  stages {
+
+    stage("Build") {
+      steps {
+        // echo "Renaming the existing container bb_iota_verification_api to bb_iota_verification_api_old${currentBuild.startTimeInMillis}"
+        // //renaming the existing container to avoid container repeationmn
+        // sh "docker rename bb_iota_verification_api bb_iota_verification_api_old${currentBuild.startTimeInMillis}"
+
+        sh "docker stop bb_iota_verification_api"
+        sh "docker rm -f bb_iota_verification_api"
+        // Build the image.
+        sh "docker build -t ${env.DOCKER_IMG} ."
+      }
+    }
+
+    stage("Deliver") {
+      steps {
+        // This will push the image `env.DOCKER_IMG` to the deployment host.
+        dockerRemoteSave(credentialsId: env.CREDENTIALS_ID, img: env.DOCKER_IMG, host: env.SSH_HOST, user: SSH_USER)
+      }
+    }
+  
+    stage("Deploy") {
+      environment {
+        BIND_PORT      = 5000   // Your bind port - Exposed to other services public.
+        CONTAINER_PORT = 3333   // Container port - Not accessible. to other service
+        APP_NAME       = "bb_iota_verification_api"
+        ENV_FILE_ID    = "bb_iota_verification_api_env"
+      }
+
+      steps {
+        echo "Attempt to use envfile: ${env.ENV_FILE_ID}"
+
+        dockerRemoteRun(
+          host: "${env.SSH_HOST}",
+          user: "${env.SSH_USER}",
+          img: "${env.DOCKER_IMG}",
+          bindPort: "${env.BIND_PORT}",
+          containerPort: "${env.CONTAINER_PORT}",
+          app: "${env.APP_NAME}",
+          env: "${env.ENV_FILE_ID}"
+        )
+      }
+    }
+  }
+}
+
+
 
 
 
